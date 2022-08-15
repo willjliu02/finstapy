@@ -1,15 +1,33 @@
-from element import BasePageElement
+from element import RealPostElement
+from element import PicturePostElement
+from element import VideoPostElement
 from element import SearchTextElement
 from locators import HomePageLocators
 
+from selenium.webdriver import ActionChains
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium import webdriver
+from selenium.common.exceptions import TimeOutException
 
 class BasePage:
     """
     Represents the basic building block of what a page is.
     """
 
-    def __init__(self, driver):
+    def __init__(self, driver:webdriver):
         self.driver = driver
+
+    def scroll(self):
+        """
+        Scrolls through the page to load more posts
+        """
+        scroller = ActionChains(self.driver)
+        
+        scroller.scroll_by_amount(0, 50)
+
+    def click(self, element):
+        element.click()
+
 
 class HomePage(BasePage):
     """
@@ -24,18 +42,40 @@ class HomePage(BasePage):
 
         return "Instagram" in self.driver.title
 
-    def click_go_button(self):
-        """Triggers the search"""
+    def get_posts(self):
+        """
+        Gets the posts that have loaded on the page.
+        """
+        try:
+            posts = WebDriverWait(self.driver, 15).until(
+                    lambda driver: driver.find_all_elements(HomePageLocators.POSTS))
+        except TimeOutException:
+            posts = []
 
-        element = self.driver.find_element(*HomePageLocators.GO_BUTTON)
-        element.click()
+        return posts
 
-class DiscoverPage(BasePage):
-    #Declares a variable that will contain the retrieved text
-    search_text_element = SearchTextElement()
+class ExplorePage(BasePage):
+    """
+    Represents the explore page on Instagram.
+    """
+    
+
 
 class AccountPage(BasePage):
-    pass
+    """
+    Represents the AccountPage of some account
+    """
+
+    def follow(self):
+        """
+        Follows the account
+        """
+        pass
+    def check_following(self):
+        """
+        Returns the number of followers that the account has
+        """
+        pass
 
 class SearchResultsPage(BasePage):
     """Search results page action methods come here"""
