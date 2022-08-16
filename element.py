@@ -1,10 +1,15 @@
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver import ActionChains
 from abc import ABC
 
-class BasePageElement():
+class BasePageElement(ABC):
     """Base page class that is initialized on every page object class."""
+
+    def __init__(self, element) -> None:
+        self.element = element
 
     def __set__(self, obj, value):
         """Sets the text to the value supplied"""
@@ -23,6 +28,33 @@ class BasePageElement():
             lambda driver: driver.find_element_by_name(self.locator))
         element = driver.find_element_by_name(self.locator)
         return element.get_attribute("value")
+
+    def click(self, driver):
+        action = ActionChains(self.driver)
+        action.click(self.element)
+        return True
+
+class UsernameBarElement(BasePageElement):
+    """
+    Represents the Username Bar
+    """
+
+    def enter_username(self, username):
+        self.element.send_keys(username)
+
+class PasswordBarElement(BasePageElement):
+    """
+    Represents the Password Bar
+    """
+
+    def enter_password(self, password):
+        self.element.send_keys(password)
+
+class LoginButtonElement(BasePageElement):
+    """
+    Represents the Login Button
+    """
+
 
 class SearchTextElement(BasePageElement):
     """This class gets the search text from the specified locator"""
@@ -57,7 +89,7 @@ class CommentSectionElement(BasePageElement):
         """
         pass
 
-class PostElement(BasePageElement, ABC):
+class PostElement(BasePageElement):
     """
     PostElement gets a specific Post as a WebElement
     """
@@ -99,7 +131,7 @@ class PicturePostElement(PostElement):
         """
         pass
 
-class VideoElement(PostElement):
+class VideoPostElement(PostElement):
     """
     Represents a PostElement with a Real or IGTV
     """
@@ -115,3 +147,8 @@ class VideoElement(PostElement):
         Gets the length of the video
         """
         pass
+
+class RecommendedHashtagElement(BasePageElement):
+    """
+    Represents one of the recommended hashtags on the explore page
+    """
