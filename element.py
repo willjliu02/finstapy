@@ -5,6 +5,8 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver import ActionChains
 from abc import ABC
 
+from .page import AccountPage
+
 class BasePageElement(ABC):
     """Base page class that is initialized on every page object class."""
 
@@ -72,14 +74,20 @@ class LikeButtonElement(BasePageElement):
         Clicks on the like button
         """
 
-class CommentSectionElement(BasePageElement):
+class CommentBoxElement(BasePageElement):
     """
-    CommentSectionElement a reference to the comment section as as whole
+    CommentBoxElement a reference to the comment section as as whole
     """
     
-    def get_caption(self):
+    def comment(self, comment):
         """
-        Gets the caption of the post
+        Comments on the post
+        """
+        pass
+
+    def posts_comment(self, driver):
+        """
+        Clicks on the post button for the comment
         """
         pass
 
@@ -89,25 +97,49 @@ class CommentSectionElement(BasePageElement):
         """
         pass
 
+class AccountLinkTagElement(BasePageElement):
+    """
+    Represents the name of the account as well as the link to the account page
+    """
+
 class PostElement(BasePageElement):
     """
     PostElement gets a specific Post as a WebElement
     """
-    def __init__(self, driver, likeButton: LikeButtonElement, commentSection: CommentSectionElement) -> None:
+    def __init__(self, element, like_count, likeButton: LikeButtonElement, commentBox: CommentBoxElement, accountLinkTag: AccountLinkTagElement) -> None:
+        super.__init__(element)
+        self.like_count = like_count
         self.likeButton = likeButton
-        self.commentSection = commentSection
+        self.commentBox = commentBox
+        self.accountLinkTag = accountLinkTag
 
-    def like_post(self) -> bool:
+    def get_likes(self):
+        """
+        Gets the number of likes on the post
+        """
+        return self.like_count
+
+    def get_follower_count(self, driver):
+        """
+        Gets the number of followers the account has
+        """
+        self.click(driver)
+        accountPage = AccountPage(driver)
+
+        return accountPage.get_follower_count()
+
+
+    def like_post(self, driver) -> bool:
         """
         Likes the likeButton attribute
         """
-        pass
+        self.likeButton.click(driver)
 
-    def get_caption(self) -> str:
+    def get_post_text(self) -> str:
         """
-        Gets the caption for the post
+        Gets all the text from the post
         """
-        pass
+        return self.element.text
 
     def has_desired_hashtags(self, hashtags = []):
         """

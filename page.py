@@ -1,4 +1,5 @@
-from element import LoginButtonElement
+from curses import BUTTON_SHIFT
+from element import LikeButtonElement, LoginButtonElement, PostElement
 from element import PicturePostElement
 from element import VideoPostElement
 from element import SearchTextElement
@@ -6,7 +7,7 @@ from element import UsernameBarElement
 from element import PasswordBarElement
 from element import RecommendedHashtagElement
 
-from locators import AccountPageLocators, ExplorePageLocators
+from locators import AccountPageLocators, ExplorePageLocators, ScrollPostLocators
 from locators import ScrollPostLocators
 from locators import LoginPageLocators
 
@@ -37,11 +38,17 @@ class BasePage(ABC):
 
         return posts
 
-    def get_buttons(self):
+    def get_buttons(self, locator):
         """
         Retrieves the buttons on the screen
         """
-        pass
+        try:
+            buttons = WebDriverWait(self.driver, 15).until(
+                    lambda driver: driver.find_all_elements(locator))
+        except TimeOutException:
+            buttons = []
+
+        return buttons
 
     def scroll(self):
         """
@@ -83,19 +90,37 @@ class HomePage(BasePage):
     Represents the home page, where the users' feed typically is.
     """
 
-    #Declares a variable that will contain the retrieved text
-    search_text_element = SearchTextElement()
+    def __init__(self, driver: webdriver):
+        super().__init__(driver)
+        self.posts = self.get_posts()
+        self.like_buttons = self.get_like_buttons()
 
     def get_posts(self):
         """
-        Gets the posts that have loaded on the page.
+        Gets the important information for the posts
         """
         return super.get_posts(ScrollPostLocators.POSTS)
+
+    def get_buttons(self):
+        """
+        Gets the buttons of the page.
+        """
+        return super.get_posts(ScrollPostLocators.BUTTONS)
+
+    def get_like_buttons(self):
+        """
+        Returns the like buttons on the page
+        """
+        return [button for i, button in enumerate(self.get_buttons()) if i % 6 == ScrollPostLocators.LIKE_BUTTON]
 
     def is_title_matches(self):
         """Verifies that the hardcoded text "Instagram" appears in page title"""
 
         return "Instagram" in self.driver.title
+
+    def load_more_posts(self):
+        self.scroll()
+        self.posts = self.get_posts()
 
     
 
@@ -141,12 +166,19 @@ class AccountPage(BasePage):
         Follows the account
         """
         follow_button = self.driver.find_element(AccountPageLocators.FOLLOW_BUTTON)
-        
-    def check_following(self):
+
+    def get_follower_count(self):
         """
         Returns the number of followers that the account has
         """
-        pass
+        account_info = self.driver.find_all_elements(AccountPageLocators.POST_FOLLOWER_FOLLOWING)
+        follower_count = account_info[AccountPageLocators.FOLLOWERS].getAttribute("title").split(",")
+        tens = len(follower_count)
+        followers = 0
+        for i in range(tens):
+            followers += follower_count[i] * 10**(3*(tens - i))
+        return followers
+        
 
 class SearchResultsPage(BasePage):
     """Search results page action methods come here"""
