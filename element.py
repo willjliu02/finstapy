@@ -119,6 +119,13 @@ class PostElement(BasePageElement):
         """
         return self.like_count
 
+    def get_account_page(self, driver):
+        """
+        Retrieves the account page
+        """
+        self.click(driver)
+        return AccountPage(driver)
+
     def get_follower_count(self, driver):
         """
         Gets the number of followers the account has
@@ -184,3 +191,13 @@ class RecommendedHashtagElement(BasePageElement):
     """
     Represents one of the recommended hashtags on the explore page
     """
+
+class FollowButtonElement(BasePageElement):
+    """
+    Represents the follow button on the Account Pages
+    """
+
+    def click(self, driver):
+        if self.element.text == "Follow":
+            super().click(driver)
+        return True

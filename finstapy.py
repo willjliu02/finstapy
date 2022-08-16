@@ -18,6 +18,8 @@ class FinstaPy:
     def __init__(self, username, password, comments = [], hashtags = []) -> None:
         PATH = "/Users/williamliu/chromedriver"
         self.driver = webdriver.Chrome(PATH)
+        self.hashtags = hashtags
+        self.comments = comments
 
         self.driver.get('https://www.instagram.com')
         loginPage = page.LoginPage(self.driver)
@@ -28,9 +30,23 @@ class FinstaPy:
     def scrollHomePage(self):
         homePage = page.HomePage(self.driver)
         for post in homePage.get_posts():
-            self.like_post(post)
+            has_desired_hashtag = self.has_hashtag(post)
+            self.like_post(post, has_desired_hashtag)
+            self.comment_on_post(post, has_desired_hashtag)
+            self.follow_account(post, has_desired_hashtag)
+            
+    def has_hashtag(self, post):
+        """
+        Checks if the post has a hashtag the account would look for
+        """
+        post_text = post.get_post_text()
+        post_hashtags = set([word for word in post_text.split() if "#" in word])
+        for hashtag in post_hashtags:
+            if hashtag in self.hashtags:
+                return True
+        return False
 
-    def like_post(self, post, freq = 0.7):
+    def like_post(self, post, has_hashtag = False, freq = 0.7):
         """
         Likes the given element, frequency % of the time
 
@@ -41,8 +57,48 @@ class FinstaPy:
         Output:
             __(bool): If the post is liked
         """
-        if Random.next() < freq:
+        probability = Random.next()
+        if has_hashtag and probability < (freq + 0.1) or probability < freq:
             post.like_post(self.driver)
+            return True
+        return False
+
+    def comment_on_post(self, post, has_hashtag = False):
+        """
+        Comments on the post
+        """
+        if has_hashtag:
+            comment = Random.choice(self.comments)
+            post.comment(comment)
+            return True
+        return False
+        
+    def follow_account(self, post, has_hashtag = False, desire_like_follower_ratio = 0.35):
+        """
+        Likes the given account if the post's like to account follower ratio is >= likes_follower_ratio
+
+        Args:
+            post(WebElement): The refernce to the post
+            account(WebElement): The reference to the account
+            likes_follower_ratio(float): The ratio between the likes on the post to the account's followers
+
+        Output:
+            __(bool): If the account was followed
+
+        Note:
+        post likes path: article/div/div/div/div/section/div/div/div/a/div/span link_text
+        """
+
+        if not has_hashtag:
+            return False
+
+        accountPage = post.get_account_page(self.driver)
+        follower_count = accountPage.get_follower_count()
+
+        like_follower_ratio = post.get_likes()/follower_count
+        
+        if like_follower_ratio > desire_like_follower_ratio:
+            accountPage.follow()
             return True
         return False
 
@@ -76,9 +132,6 @@ class FinstaPy:
     def add_comment(self, comment):
         self.comments.append(comment)
 
-    def comment_photo(self, comment = ""):
-        pass
-
     def get_caption(self, post):
         """
         Gets the caption to the specific post
@@ -89,24 +142,6 @@ class FinstaPy:
         Output:
             caption(str): The caption to the post
         """
-        pass
-
-    def follow_account(self, post, account, likes_follower_ratio = 0.35):
-        """
-        Likes the given account if the post's like to account follower ratio is >= likes_follower_ratio
-
-        Args:
-            post(WebElement): The refernce to the post
-            account(WebElement): The reference to the account
-            likes_follower_ratio(float): The ratio between the likes on the post to the account's followers
-
-        Output:
-            __(bool): If the account was followed
-
-        Note:
-        post likes path: article/div/div/div/div/section/div/div/div/a/div/span link_text
-        """
-        like_follower_ratio = post.get_likes()/post.get_follower_count()
         pass
 
     def scroll_page(self):

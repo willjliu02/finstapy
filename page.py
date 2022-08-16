@@ -1,5 +1,5 @@
 from curses import BUTTON_SHIFT
-from element import LikeButtonElement, LoginButtonElement, PostElement
+from element import FollowButtonElement, LikeButtonElement, LoginButtonElement, PostElement
 from element import PicturePostElement
 from element import VideoPostElement
 from element import SearchTextElement
@@ -165,7 +165,9 @@ class AccountPage(BasePage):
         """
         Follows the account
         """
-        follow_button = self.driver.find_element(AccountPageLocators.FOLLOW_BUTTON)
+        button = self.driver.find_element(AccountPageLocators.FOLLOW_BUTTON)
+        follow_button = FollowButtonElement(button)
+        follow_button.click(self.driver)
 
     def get_follower_count(self):
         """
