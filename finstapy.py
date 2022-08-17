@@ -28,14 +28,21 @@ class FinstaPy:
         self.dismiss_notification()
 
     def viewHomePage(self, like_freq = 0.7, desired_like_follower_ratio = 0.35):
+        liked = 0
+        commented = 0
+        followed = 0
         page = page.HomePage(self.driver)
         posts = page.get_posts()
         for post in posts:
             has_desired_hashtag = self.has_hashtag(post)
-            self.like_post(post, like_freq, has_desired_hashtag)
-            self.comment_on_post(post, has_desired_hashtag)
-            self.follow_account(post, desired_like_follower_ratio, has_desired_hashtag)
+            if self.like_post(post, like_freq, has_desired_hashtag):
+                liked += 1
+            if self.comment_on_post(post, has_desired_hashtag):
+                commented += 1
+            if self.follow_account(post, desired_like_follower_ratio, has_desired_hashtag):
+                followed += 1
         self.scroll_page(page, posts[-1]._get_element()) #element becomes the 4th loaded article
+        print(f"Liked: {liked}\nCommented on: {commented}\nFollowed: {followed}")
 
     def viewExplorePage(self, like_freq = 0.7, desired_like_follower_ratio = 0.35):
         page = page.ExplorePage(self.driver)
