@@ -112,8 +112,7 @@ class FinstaPy:
         """
         probability = random.random()
         if has_hashtag and probability < (freq + has_hashtag_like_bonus) or probability < freq:
-            post.like_post(self.driver)
-            return True
+            return post.like_post(self.driver)
         return False
 
     def comment_on_post(self, post, has_hashtag = False):

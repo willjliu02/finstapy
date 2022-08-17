@@ -88,7 +88,8 @@ class LikeButtonElement(BasePageElement):
         words = set(innerHTML.split())
         if "aria-label=\"Like\"" in words:
             super().click(driver)
-        return True
+            return True
+        return False
 
 class CommentBoxElement(BasePageElement):
     """
