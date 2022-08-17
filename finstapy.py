@@ -4,11 +4,15 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException
 
-import page
-import element
-import locators
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.common.exceptions import TimeoutException
+
+from page import *
+from locators import *
 
 from random import Random
+
+import time
 
 class FinstaPy:
     """
@@ -22,17 +26,36 @@ class FinstaPy:
         self.comments = comments
 
         self.driver.get('https://www.instagram.com')
-        loginPage = page.LoginPage(self.driver)
+        loginPage = LoginPage(self.driver)
         loginPage.log_in(username, password)
         loginPage.click_login()
-        self.dismiss_notification()
+
+    def dismiss_notification(self):
+        try:
+            alert = self.driver.switch_to.alert()
+            self.browser.close(alert)
+        except NoSuchElementException:
+            CONTINUE
+        # try:
+        #     locator = locators.PopUpLocators.SAVE_INFO_BUTTON
+        #     button = WebDriverWait(self.driver, 15).until(
+        #             lambda driver: driver.find_element(locator[0], locator[1]))
+        #     saveInfoButton = SaveInfoButtonElement(button)
+        #     saveInfoButton.click(self.driver)
+        # except TimeoutException:
+        #     print("Did not see the pop-up")
+        #     self.driver.quit()
 
     def viewHomePage(self, like_freq = 0.7, desired_like_follower_ratio = 0.35):
+        time.sleep(3)
+        saveInfoPage = SaveInfoPage(self.driver)
+        saveInfoPage.click_button()
+        homePage = HomePage(self.driver)
+        homePage.close_notification_alert()
         liked = 0
         commented = 0
         followed = 0
-        page = page.HomePage(self.driver)
-        posts = page.get_posts()
+        posts = homePage.get_posts()
         for post in posts:
             has_desired_hashtag = self.has_hashtag(post)
             if self.like_post(post, like_freq, has_desired_hashtag):
@@ -41,18 +64,18 @@ class FinstaPy:
                 commented += 1
             if self.follow_account(post, desired_like_follower_ratio, has_desired_hashtag):
                 followed += 1
-        self.scroll_page(page, posts[-1]._get_element()) #element becomes the 4th loaded article
-        print(f"Liked: {liked}\nCommented on: {commented}\nFollowed: {followed}")
+        # self.scroll_page(homePage) #element becomes the 4th loaded article
+        print(f"Liked: {liked}\nCommented on: {commented}\nFollowed: {followed}\nOut of {len(posts)} posts")
 
     def viewExplorePage(self, like_freq = 0.7, desired_like_follower_ratio = 0.35):
-        page = page.ExplorePage(self.driver)
-        posts = page.get_posts()
+        explorePage = ExplorePage(self.driver)
+        posts = explorePage.get_posts()
         for post in posts:
             has_desired_hashtag = self.has_hashtag(post)
             self.like_post(post, like_freq, has_desired_hashtag)
             self.comment_on_post(post, has_desired_hashtag)
             self.follow_account(post, desired_like_follower_ratio, has_desired_hashtag)
-        self.scroll_page(page, posts[-1]._get_element()) #element becomes the 4th loaded article
+        self.scroll_page(explorePage, posts[-1]._get_element()) #element becomes the 4th loaded article
             
     def has_hashtag(self, post):
         """
@@ -111,7 +134,8 @@ class FinstaPy:
         if not has_hashtag:
             return False
 
-        accountPage = post.get_account_page(self.driver)
+        post.go_to_account_page(self.driver)
+        accountPage = AccountPage(self.driver)
         follower_count = accountPage.get_follower_count()
 
         like_follower_ratio = post.get_likes()/follower_count
@@ -120,13 +144,6 @@ class FinstaPy:
             accountPage.follow()
             return True
         return False
-
-    def dismiss_notification(self):
-        try:
-            alert = self.driver.switch_to.alert()
-            self.browser.close(alert)
-        except NoSuchElementException:
-            CONTINUE
 
     def search_hashtag(self, hashtag):
         search = self.driver.find_element(By.TAG_NAME, "input")
@@ -163,7 +180,7 @@ class FinstaPy:
         """
         pass
 
-    def scroll_page(self, page, element):
+    def scroll_page(self, page):
         """
         Scrolls down the page to load more posts and then pauses to allow it to load
 
@@ -172,7 +189,7 @@ class FinstaPy:
         Output:
 
         """
-        page.scroll(element)
+        page.scroll()
 
     def click(self, element):
         pass

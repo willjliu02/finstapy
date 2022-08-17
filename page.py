@@ -1,21 +1,31 @@
-from curses import BUTTON_SHIFT
-from element import FollowButtonElement, LikeButtonElement, LoginButtonElement, PostElement
+from http.client import CONTINUE
+from element import FollowButtonElement, NotNowButtonElement
+from element import LikeButtonElement
+from element import LoginButtonElement
+from element import PostElement
 from element import PicturePostElement
 from element import VideoPostElement
 from element import SearchTextElement
 from element import UsernameBarElement
 from element import PasswordBarElement
 from element import RecommendedHashtagElement
+from element import SaveInfoButtonElement
 
-from locators import AccountPageLocators, ExplorePageLocators, ScrollPostLocators
+from locators import AccountPageLocators
+from locators import ExplorePageLocators
+from locators import ScrollPostLocators
 from locators import ScrollPostLocators
 from locators import LoginPageLocators
+from locators import HomePageLocators
+from locators import SaveInfoPageLocators
 
 from selenium.webdriver import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.common.exceptions import TimeoutException
 from selenium import webdriver
-from selenium.common.exceptions import TimeOutException
 from abc import ABC
+
+import time
 
 class BasePage(ABC):
     """
@@ -25,28 +35,43 @@ class BasePage(ABC):
     def __init__(self, driver:webdriver):
         self.driver = driver
 
-    def get_posts(self, postLocator, like_count_Locator, button_locator, like_button_locator, comment_box_locator, acc_link_tag_locator):
+    def get_posts(self, postLocator, button_locator, like_button_locator, comment_box_locator, acc_link_tag_locator):
         """
         Retrieves the posts loaded on the page
         """
-        try:
-            posts = WebDriverWait(self.driver, 15).until(
-                    lambda driver: driver.find_all_elements(postLocator))
-        except TimeOutException:
-            posts = []
+        time.sleep(5)
+        while True:
+            try:
+                posts = WebDriverWait(self.driver, 30).until(
+                        lambda driver: driver.find_elements(postLocator[0], postLocator[1]))
+                
+            except TimeoutException:
+                posts = []
+                print("the exception did go off")
 
-        buttons = self.get_buttons(button_locator)
-        like_buttons = []
-        comment_boxes = []
-        acc_link_tags = []
-        for i, button in enumerate(buttons):
-            buttonType = i % 6
-            if buttonType == like_button_locator:
-                like_buttons.append(button)
-            elif buttonType == comment_box_locator:
-                comment_boxes.append(button)
-            elif buttonType == acc_link_tag_locator:
-                acc_link_tags.append(button)
+            buttons = self.get_buttons(button_locator)
+            like_buttons = []
+            comment_boxes = []
+            acc_link_tags = self.get_account_tags(acc_link_tag_locator)
+            for i, button in enumerate(buttons):
+                buttonType = i % 6
+                if buttonType == like_button_locator:
+                    like_buttons.append(button)
+                elif buttonType == comment_box_locator:
+                    comment_boxes.append(button)
+
+            num_posts = len(posts)
+            num_like_buttons = len(like_buttons)
+            num_comment_boxes = len(comment_boxes)
+            num_acc_link_tag = len(acc_link_tags)
+
+            print(f"posts found {num_posts} posts")
+            print(f"like_buttons found {num_like_buttons} like_buttons")
+            print(f"comment_boxes found {num_comment_boxes} comment_boxes")
+            print(f"acc_link_tags found {num_acc_link_tag} acc_link_tags")
+
+            if num_posts == num_like_buttons == num_comment_boxes == num_acc_link_tag:
+                break
 
         post_params = zip(posts, like_buttons, comment_boxes, acc_link_tags)
         post_elements = list(map(lambda tup: PostElement(tup[0], tup[1], tup[2], tup[3]), post_params))
@@ -59,32 +84,48 @@ class BasePage(ABC):
         Retrieves the buttons on the screen
         """
         try:
-            buttons = WebDriverWait(self.driver, 15).until(
-                    lambda driver: driver.find_all_elements(locator))
-        except TimeOutException:
+            buttons = WebDriverWait(self.driver, 30).until(
+                    lambda driver: driver.find_elements(locator[0], locator[1]))
+        except TimeoutException:
             buttons = []
 
         return buttons
+
+    def get_account_tags(self, locator):
+        """
+        Retrieves the location for the account name's and the path to their account pages
+        """
+
+        try:
+            account_link_tags = WebDriverWait(self.driver, 30).until(
+                    lambda driver: driver.find_elements(locator[0], locator[1]))
+        except TimeoutException:
+            account_link_tags = []
+
+        return account_link_tags
+
 
     def get_likes(self, locator):
         """
         Retrieves the number of likes for each post
         """
         try:
+            by, value = locator
             like_counts = WebDriverWait(self.driver, 15).until(
-                    lambda driver: driver.find_all_elements(locator))
-        except TimeOutException:
+                    lambda driver: driver.find_elements(locator[0], locator[1]))
+        except TimeoutException:
             like_counts = []
 
         return like_counts
 
 
-    def scroll(self, element = None):
+    def scroll(self):
         """
         Scrolls through the page to load more posts
         """
         scroller = ActionChains(self.driver)
-        scroller.scroll_from_origin(element, 0, 50)
+        scroller.scroll_by_amount(self.driver.get_window_size())
+        scroller.perform()
 
     def click_on(self, element):
         element.click(self.driver)
@@ -98,21 +139,48 @@ class LoginPage(BasePage):
         """
         Logs into the account
         """
-        userElement = self.driver.find_element(LoginPageLocators.USERNAME_BAR)
-        username_bar = UsernameBarElement(userElement)  # Enters the username
-        username_bar.enter_username(username)
+        try:
+            locator = LoginPageLocators.USERNAME_BAR
+            userElement = WebDriverWait(self.driver, 15).until(
+                    lambda driver: driver.find_element(locator[0], locator[1]))
+            username_bar = UsernameBarElement(userElement)  # Enters the username
+            username_bar.enter_username(username)
 
-        pwElement = self.driver.find_element(LoginPageLocators.PASSWORD_BAR)
-        password_bar = PasswordBarElement(pwElement)  # Enters the username
-        password_bar.enter_password(password)
+            locator = LoginPageLocators.PASSWORD_BAR
+            pwElement = WebDriverWait(self.driver, 15).until(
+                    lambda driver: driver.find_element(locator[0], locator[1]))
+            password_bar = PasswordBarElement(pwElement)  # Enters the password
+            password_bar.enter_password(password)
+        except TimeoutException:
+            self.driver.quit()
 
     def click_login(self):
         """
         Clicks on the login button
         """
-        button = self.driver.find_element(LoginPageLocators.LOG_IN_BUTTON)
+        locator = LoginPageLocators.LOG_IN_BUTTON
+        button = self.driver.find_element(locator[0], locator[1])
         login_button = LoginButtonElement(button)
         login_button.click(self.driver)
+
+class SaveInfoPage(BasePage):
+    """
+    Has the brief question to save the info.
+    """
+
+    def click_button(self):
+        try:
+            locator = SaveInfoPageLocators.SAVE_INFO_BUTTON
+            button = WebDriverWait(self.driver, 15).until(
+                lambda driver: driver.find_element(locator[0], locator[1])
+            )
+            saveInfoButton = SaveInfoButtonElement(button)
+            if saveInfoButton.text == "Save Info":
+                saveInfoButton.click(self.driver)
+                return True
+            return False
+        except TimeoutError:
+            self.driver.get('https://www.instagram.com')
 
 class HomePage(BasePage):
     """
@@ -121,20 +189,29 @@ class HomePage(BasePage):
 
     def __init__(self, driver: webdriver):
         super().__init__(driver)
-        self.posts = self.get_posts()
-        self.like_buttons = self.get_like_buttons()
+        self.posts = []
+
+    def close_notification_alert(self):
+        """
+        Closes the notification alert that pops up as you switch to the page
+        """
+        try:
+            locator = HomePageLocators.NOT_NOW_BUTTON
+            button = WebDriverWait(self.driver, 10).until(
+                    lambda driver: driver.find_element(locator[0], locator[1]))
+            not_now_button = NotNowButtonElement(button)
+            not_now_button.click(self.driver)
+            # print("done!")
+        except TimeoutError:
+            # print("didn't close.")
+            CONTINUE
 
     def get_posts(self):
         """
         Gets the important information for the posts
         """
-        return super.get_posts(ScrollPostLocators.POSTS)
-
-    def get_buttons(self):
-        """
-        Gets the buttons of the page.
-        """
-        return super.get_posts(ScrollPostLocators.BUTTONS)
+        self.posts = super().get_posts(HomePageLocators.POSTS, ScrollPostLocators.BUTTONS, ScrollPostLocators.LIKE_BUTTON, ScrollPostLocators.COMMENT_BUTTON, ScrollPostLocators.ACCOUNT_LINK)
+        return self.posts
 
     def get_like_buttons(self):
         """
@@ -180,8 +257,8 @@ class ExplorePage(BasePage):
         """
         Gets the recommended hashtags
         """
-
-        list_of_hashtags = self.driver.find_all_elements(ExplorePageLocators.REC_HASHTAGS)
+        locator = ExplorePageLocators.REC_HASHTAGS
+        list_of_hashtags = self.driver.find_all_elements(locator[0], locator[1])
         return list(map(lambda hashtag: RecommendedHashtagElement(hashtag), list_of_hashtags))
 
 
@@ -194,7 +271,8 @@ class AccountPage(BasePage):
         """
         Follows the account
         """
-        button = self.driver.find_element(AccountPageLocators.FOLLOW_BUTTON)
+        locator = AccountPageLocators.FOLLOW_BUTTON
+        button = self.driver.find_element(locator[0], locator[1])
         follow_button = FollowButtonElement(button)
         follow_button.click(self.driver)
 
@@ -202,7 +280,8 @@ class AccountPage(BasePage):
         """
         Returns the number of followers that the account has
         """
-        account_info = self.driver.find_all_elements(AccountPageLocators.POST_FOLLOWER_FOLLOWING)
+        locator = AccountPageLocators.POST_FOLLOWER_FOLLOWING
+        account_info = self.driver.find_all_elements(locator[0], locator[1])
         follower_count = account_info[AccountPageLocators.FOLLOWERS].getAttribute("title").split(",")
         tens = len(follower_count)
         followers = 0

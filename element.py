@@ -5,8 +5,6 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver import ActionChains
 from abc import ABC
 
-from .page import AccountPage
-
 class BasePageElement(ABC):
     """Base page class that is initialized on every page object class."""
 
@@ -38,8 +36,9 @@ class BasePageElement(ABC):
         return self.element
 
     def click(self, driver):
-        action = ActionChains(self.driver)
+        action = ActionChains(driver)
         action.click(self.element)
+        action.perform()
         return True
 
 class UsernameBarElement(BasePageElement):
@@ -63,6 +62,10 @@ class LoginButtonElement(BasePageElement):
     Represents the Login Button
     """
 
+class SaveInfoButtonElement(BasePageElement):
+    """
+    Represents the Save Info Button after the Login Page
+    """
 
 class SearchTextElement(BasePageElement):
     """This class gets the search text from the specified locator"""
@@ -114,9 +117,9 @@ class PostElement(BasePageElement):
     """
     def __init__(self, element, like_button: LikeButtonElement, comment_box: CommentBoxElement, acc_link_tag: AccountLinkTagElement, moreButton = None) -> None:
         super.__init__(element)
-        self.likeButton = like_button
-        self.commentBox = comment_box
-        self.accountLinkTag = acc_link_tag
+        self.like_button = like_button
+        self.comment_box = comment_box
+        self.acc_link_tag = acc_link_tag
 
     def get_likes(self):
         """
@@ -140,18 +143,17 @@ class PostElement(BasePageElement):
                 return i + 4
         return -1
 
-    def get_account_page(self, driver):
+    def go_to_account_page(self, driver):
         """
         Retrieves the account page
         """
-        self.click(driver)
-        return AccountPage(driver)
+        self.acc_link_tag.click(driver)
 
     def like_post(self, driver) -> bool:
         """
         Likes the likeButton attribute
         """
-        self.likeButton.click(driver)
+        self.like_button.click(driver)
 
     def get_post_text(self) -> str:
         """
