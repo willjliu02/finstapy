@@ -31,6 +31,12 @@ class BasePageElement(ABC):
         element = driver.find_element_by_name(self.locator)
         return element.get_attribute("value")
 
+    def _get_element(self):
+        """
+        Gets the element
+        """
+        return self.element
+
     def click(self, driver):
         action = ActionChains(self.driver)
         action.click(self.element)
@@ -106,18 +112,33 @@ class PostElement(BasePageElement):
     """
     PostElement gets a specific Post as a WebElement
     """
-    def __init__(self, element, like_count, likeButton: LikeButtonElement, commentBox: CommentBoxElement, accountLinkTag: AccountLinkTagElement) -> None:
+    def __init__(self, element, like_button: LikeButtonElement, comment_box: CommentBoxElement, acc_link_tag: AccountLinkTagElement, moreButton = None) -> None:
         super.__init__(element)
-        self.like_count = like_count
-        self.likeButton = likeButton
-        self.commentBox = commentBox
-        self.accountLinkTag = accountLinkTag
+        self.likeButton = like_button
+        self.commentBox = comment_box
+        self.accountLinkTag = acc_link_tag
 
     def get_likes(self):
         """
         Gets the number of likes on the post
         """
-        return self.like_count
+        text = self.get_post_text()
+        divided_text = text.split()
+        number_index = self.find_likes(divided_text) #inclusive
+        broken_like_count = divided_text[number_index].split(",")
+        tens = len(broken_like_count)
+        likes = 0
+        for i in range(tens):
+            likes += broken_like_count[i] * 10**(3*(tens - i - 1))
+        return likes
+
+    def find_likes(self, lst_words):
+        for i, word in enumerate(lst_words):
+            if word == "likes" or word == "views":
+                return i-1
+            elif word == "Liked":
+                return i + 4
+        return -1
 
     def get_account_page(self, driver):
         """
@@ -125,16 +146,6 @@ class PostElement(BasePageElement):
         """
         self.click(driver)
         return AccountPage(driver)
-
-    def get_follower_count(self, driver):
-        """
-        Gets the number of followers the account has
-        """
-        self.click(driver)
-        accountPage = AccountPage(driver)
-
-        return accountPage.get_follower_count()
-
 
     def like_post(self, driver) -> bool:
         """

@@ -35,6 +35,8 @@ class ScrollPostLocators:
     SHARE_BUTTON = 3
     SAVE_BUTTON = 4
     EMOJI_BUTTON = 5
+    # LIKE_COUNT = (By.CSS_SELECTOR, "div._aacl._aaco._aacw._adda._aacx._aada._aade")
+    CAPTION_MORE_BUTTON = (By.CSS_SELECTOR, "div._aacl._aaco._aacu._aacx._aad7._aade")
 
 
 class OtherPostLocators:
