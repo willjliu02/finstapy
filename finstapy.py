@@ -27,13 +27,25 @@ class FinstaPy:
         loginPage.click_login()
         self.dismiss_notification()
 
-    def scrollHomePage(self):
-        homePage = page.HomePage(self.driver)
-        for post in homePage.get_posts():
+    def viewHomePage(self, like_freq = 0.7, desired_like_follower_ratio = 0.35):
+        page = page.HomePage(self.driver)
+        posts = page.get_posts()
+        for post in posts:
             has_desired_hashtag = self.has_hashtag(post)
-            self.like_post(post, has_desired_hashtag)
+            self.like_post(post, like_freq, has_desired_hashtag)
             self.comment_on_post(post, has_desired_hashtag)
-            self.follow_account(post, has_desired_hashtag)
+            self.follow_account(post, desired_like_follower_ratio, has_desired_hashtag)
+        self.scroll_page(page, posts[-1]._get_element()) #element becomes the 4th loaded article
+
+    def viewExplorePage(self, like_freq = 0.7, desired_like_follower_ratio = 0.35):
+        page = page.ExplorePage(self.driver)
+        posts = page.get_posts()
+        for post in posts:
+            has_desired_hashtag = self.has_hashtag(post)
+            self.like_post(post, like_freq, has_desired_hashtag)
+            self.comment_on_post(post, has_desired_hashtag)
+            self.follow_account(post, desired_like_follower_ratio, has_desired_hashtag)
+        self.scroll_page(page, posts[-1]._get_element()) #element becomes the 4th loaded article
             
     def has_hashtag(self, post):
         """
@@ -46,7 +58,7 @@ class FinstaPy:
                 return True
         return False
 
-    def like_post(self, post, has_hashtag = False, freq = 0.7):
+    def like_post(self, post, freq, has_hashtag = False, has_hashtag_like_bonus = 0.1):
         """
         Likes the given element, frequency % of the time
 
@@ -58,7 +70,7 @@ class FinstaPy:
             __(bool): If the post is liked
         """
         probability = Random.next()
-        if has_hashtag and probability < (freq + 0.1) or probability < freq:
+        if has_hashtag and probability < (freq + has_hashtag_like_bonus) or probability < freq:
             post.like_post(self.driver)
             return True
         return False
@@ -73,7 +85,7 @@ class FinstaPy:
             return True
         return False
         
-    def follow_account(self, post, has_hashtag = False, desire_like_follower_ratio = 0.35):
+    def follow_account(self, post, desired_like_follower_ratio, has_hashtag = False):
         """
         Likes the given account if the post's like to account follower ratio is >= likes_follower_ratio
 
@@ -97,7 +109,7 @@ class FinstaPy:
 
         like_follower_ratio = post.get_likes()/follower_count
         
-        if like_follower_ratio > desire_like_follower_ratio:
+        if like_follower_ratio > desired_like_follower_ratio:
             accountPage.follow()
             return True
         return False
@@ -144,7 +156,7 @@ class FinstaPy:
         """
         pass
 
-    def scroll_page(self):
+    def scroll_page(self, page, element):
         """
         Scrolls down the page to load more posts and then pauses to allow it to load
 
@@ -153,7 +165,7 @@ class FinstaPy:
         Output:
 
         """
-        pass
+        page.scroll(element)
 
     def click(self, element):
         pass

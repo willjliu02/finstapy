@@ -25,18 +25,34 @@ class BasePage(ABC):
     def __init__(self, driver:webdriver):
         self.driver = driver
 
-    def get_posts(self, locator = ""):
+    def get_posts(self, postLocator, like_count_Locator, button_locator, like_button_locator, comment_box_locator, acc_link_tag_locator):
         """
         Retrieves the posts loaded on the page
         """
-
         try:
             posts = WebDriverWait(self.driver, 15).until(
-                    lambda driver: driver.find_all_elements(locator))
+                    lambda driver: driver.find_all_elements(postLocator))
         except TimeOutException:
             posts = []
 
-        return posts
+        buttons = self.get_buttons(button_locator)
+        like_buttons = []
+        comment_boxes = []
+        acc_link_tags = []
+        for i, button in enumerate(buttons):
+            buttonType = i % 6
+            if buttonType == like_button_locator:
+                like_buttons.append(button)
+            elif buttonType == comment_box_locator:
+                comment_boxes.append(button)
+            elif buttonType == acc_link_tag_locator:
+                acc_link_tags.append(button)
+
+        post_params = zip(posts, like_buttons, comment_boxes, acc_link_tags)
+        post_elements = list(map(lambda tup: PostElement(tup[0], tup[1], tup[2], tup[3]), post_params))
+
+        return post_elements
+
 
     def get_buttons(self, locator):
         """
@@ -50,12 +66,25 @@ class BasePage(ABC):
 
         return buttons
 
-    def scroll(self):
+    def get_likes(self, locator):
+        """
+        Retrieves the number of likes for each post
+        """
+        try:
+            like_counts = WebDriverWait(self.driver, 15).until(
+                    lambda driver: driver.find_all_elements(locator))
+        except TimeOutException:
+            like_counts = []
+
+        return like_counts
+
+
+    def scroll(self, element = None):
         """
         Scrolls through the page to load more posts
         """
         scroller = ActionChains(self.driver)
-        scroller.scroll_by_amount(0, 50)
+        scroller.scroll_from_origin(element, 0, 50)
 
     def click_on(self, element):
         element.click(self.driver)
@@ -178,7 +207,7 @@ class AccountPage(BasePage):
         tens = len(follower_count)
         followers = 0
         for i in range(tens):
-            followers += follower_count[i] * 10**(3*(tens - i))
+            followers += follower_count[i] * 10**(3*(tens - i - 1))
         return followers
         
 
