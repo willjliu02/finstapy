@@ -1,5 +1,7 @@
 from http.client import CONTINUE
-from element import FollowButtonElement, NotNowButtonElement
+from element import AccountLinkTagElement, CommentBoxElement, FollowButtonElement
+from element import SaveInfoButtonElement
+from element import NotNowButtonElement
 from element import LikeButtonElement
 from element import LoginButtonElement
 from element import PostElement
@@ -22,6 +24,7 @@ from locators import SaveInfoPageLocators
 from selenium.webdriver import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.common.actions.wheel_input import ScrollOrigin
 from selenium import webdriver
 from abc import ABC
 
@@ -39,39 +42,39 @@ class BasePage(ABC):
         """
         Retrieves the posts loaded on the page
         """
-        time.sleep(5)
-        while True:
-            try:
-                posts = WebDriverWait(self.driver, 30).until(
-                        lambda driver: driver.find_elements(postLocator[0], postLocator[1]))
-                
-            except TimeoutException:
-                posts = []
-                print("the exception did go off")
+        time.sleep(10)
+        # while True:
+        try:
+            posts = WebDriverWait(self.driver, 30).until(
+                    lambda driver: driver.find_elements(postLocator[0], postLocator[1]))
+            
+        except TimeoutException:
+            posts = []
+            print("the exception did go off")
 
-            buttons = self.get_buttons(button_locator)
-            like_buttons = []
-            comment_boxes = []
-            acc_link_tags = self.get_account_tags(acc_link_tag_locator)
-            for i, button in enumerate(buttons):
-                buttonType = i % 6
-                if buttonType == like_button_locator:
-                    like_buttons.append(button)
-                elif buttonType == comment_box_locator:
-                    comment_boxes.append(button)
+        buttons = self.get_buttons(button_locator)
+        like_buttons = []
+        comment_boxes = []
+        acc_link_tags = self.get_account_tags(acc_link_tag_locator)
+        for i, button in enumerate(buttons):
+            buttonType = i % 6
+            if buttonType == like_button_locator:
+                like_buttons.append(LikeButtonElement(button))
+            elif buttonType == comment_box_locator:
+                comment_boxes.append(CommentBoxElement(button))
 
-            num_posts = len(posts)
-            num_like_buttons = len(like_buttons)
-            num_comment_boxes = len(comment_boxes)
-            num_acc_link_tag = len(acc_link_tags)
+        num_posts = len(posts)
+        num_like_buttons = len(like_buttons)
+        num_comment_boxes = len(comment_boxes)
+        num_acc_link_tag = len(acc_link_tags)
 
-            print(f"posts found {num_posts} posts")
-            print(f"like_buttons found {num_like_buttons} like_buttons")
-            print(f"comment_boxes found {num_comment_boxes} comment_boxes")
-            print(f"acc_link_tags found {num_acc_link_tag} acc_link_tags")
+        print(f"{num_posts} posts found")
+        print(f"{num_like_buttons} like_buttons found")
+        print(f"{num_comment_boxes} comment_boxes found")
+        print(f"{num_acc_link_tag} acc_link_tags found")
 
-            if num_posts == num_like_buttons == num_comment_boxes == num_acc_link_tag:
-                break
+            # if num_posts == num_like_buttons == num_comment_boxes == num_acc_link_tag:
+            #     break
 
         post_params = zip(posts, like_buttons, comment_boxes, acc_link_tags)
         post_elements = list(map(lambda tup: PostElement(tup[0], tup[1], tup[2], tup[3]), post_params))
@@ -102,7 +105,7 @@ class BasePage(ABC):
         except TimeoutException:
             account_link_tags = []
 
-        return account_link_tags
+        return list(map(lambda tag: AccountLinkTagElement(tag), account_link_tags))
 
 
     def get_likes(self, locator):
@@ -119,12 +122,13 @@ class BasePage(ABC):
         return like_counts
 
 
-    def scroll(self):
+    def scroll(self, element):
         """
         Scrolls through the page to load more posts
         """
         scroller = ActionChains(self.driver)
-        scroller.scroll_by_amount(self.driver.get_window_size())
+        origin = ScrollOrigin(element, 0, 0)
+        scroller.scroll_from_origin(origin, 0, 100)
         scroller.perform()
 
     def click_on(self, element):
@@ -175,10 +179,8 @@ class SaveInfoPage(BasePage):
                 lambda driver: driver.find_element(locator[0], locator[1])
             )
             saveInfoButton = SaveInfoButtonElement(button)
-            if saveInfoButton.text == "Save Info":
-                saveInfoButton.click(self.driver)
-                return True
-            return False
+            saveInfoButton.click(self.driver)
+            return True
         except TimeoutError:
             self.driver.get('https://www.instagram.com')
 

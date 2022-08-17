@@ -10,7 +10,7 @@ from selenium.common.exceptions import TimeoutException
 from page import *
 from locators import *
 
-from random import Random
+import random
 
 import time
 
@@ -30,6 +30,11 @@ class FinstaPy:
         loginPage.log_in(username, password)
         loginPage.click_login()
 
+        saveInfoPage = SaveInfoPage(self.driver)
+        saveInfoPage.click_button()
+
+        time.sleep(3)
+
     def dismiss_notification(self):
         try:
             alert = self.driver.switch_to.alert()
@@ -46,16 +51,22 @@ class FinstaPy:
         #     print("Did not see the pop-up")
         #     self.driver.quit()
 
-    def viewHomePage(self, like_freq = 0.7, desired_like_follower_ratio = 0.35):
+    def go_to_home_page(self):
+        """
+        Goes to the Home Page
+        """
+        
+        self.driver.get("https://www.instagram.com")
+        self.homePage = HomePage(self.driver)
+        self.homePage.close_notification_alert()
+        return self.homePage
+    
+    def view_page(self, page_to_view, like_freq = 0.7, desired_like_follower_ratio = 0.35):
         time.sleep(3)
-        saveInfoPage = SaveInfoPage(self.driver)
-        saveInfoPage.click_button()
-        homePage = HomePage(self.driver)
-        homePage.close_notification_alert()
         liked = 0
         commented = 0
         followed = 0
-        posts = homePage.get_posts()
+        posts = page_to_view.get_posts()
         for post in posts:
             has_desired_hashtag = self.has_hashtag(post)
             if self.like_post(post, like_freq, has_desired_hashtag):
@@ -64,8 +75,8 @@ class FinstaPy:
                 commented += 1
             if self.follow_account(post, desired_like_follower_ratio, has_desired_hashtag):
                 followed += 1
-        # self.scroll_page(homePage) #element becomes the 4th loaded article
-        print(f"Liked: {liked}\nCommented on: {commented}\nFollowed: {followed}\nOut of {len(posts)} posts")
+        self.scroll_page(page_to_view, posts[-1]._get_element()) #element becomes the 4th loaded article
+        print(f"\nLiked: {liked}\nCommented on: {commented}\nFollowed: {followed}\nOut of {len(posts)} posts")
 
     def viewExplorePage(self, like_freq = 0.7, desired_like_follower_ratio = 0.35):
         explorePage = ExplorePage(self.driver)
@@ -75,7 +86,7 @@ class FinstaPy:
             self.like_post(post, like_freq, has_desired_hashtag)
             self.comment_on_post(post, has_desired_hashtag)
             self.follow_account(post, desired_like_follower_ratio, has_desired_hashtag)
-        self.scroll_page(explorePage, posts[-1]._get_element()) #element becomes the 4th loaded article
+        # self.scroll_page(explorePage, posts[-1]._get_element()) #element becomes the 4th loaded article
             
     def has_hashtag(self, post):
         """
@@ -99,7 +110,7 @@ class FinstaPy:
         Output:
             __(bool): If the post is liked
         """
-        probability = Random.next()
+        probability = random.random()
         if has_hashtag and probability < (freq + has_hashtag_like_bonus) or probability < freq:
             post.like_post(self.driver)
             return True
@@ -110,7 +121,7 @@ class FinstaPy:
         Comments on the post
         """
         if has_hashtag:
-            comment = Random.choice(self.comments)
+            comment = random.choice(self.comments)
             post.comment(comment)
             return True
         return False
@@ -180,7 +191,7 @@ class FinstaPy:
         """
         pass
 
-    def scroll_page(self, page):
+    def scroll_page(self, page, element):
         """
         Scrolls down the page to load more posts and then pauses to allow it to load
 
@@ -189,7 +200,7 @@ class FinstaPy:
         Output:
 
         """
-        page.scroll()
+        page.scroll(element)
 
     def click(self, element):
         pass

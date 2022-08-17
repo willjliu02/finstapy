@@ -67,6 +67,11 @@ class SaveInfoButtonElement(BasePageElement):
     Represents the Save Info Button after the Login Page
     """
 
+class NotNowButtonElement(BasePageElement):
+    """
+    Represents the NotNow Button on the notifications pop up
+    """
+
 class SearchTextElement(BasePageElement):
     """This class gets the search text from the specified locator"""
 
@@ -77,11 +82,13 @@ class LikeButtonElement(BasePageElement):
     """
     LikeButtonElement is an object created for the actual like button of an article
     """
-    
-    def like_post(self):
-        """
-        Clicks on the like button
-        """
+
+    def click(self, driver):
+        innerHTML = self.element.get_attribute("innerHTML")
+        words = set(innerHTML.split())
+        if "aria-label=\"Like\"" in words:
+            super().click(driver)
+        return True
 
 class CommentBoxElement(BasePageElement):
     """
@@ -116,7 +123,7 @@ class PostElement(BasePageElement):
     PostElement gets a specific Post as a WebElement
     """
     def __init__(self, element, like_button: LikeButtonElement, comment_box: CommentBoxElement, acc_link_tag: AccountLinkTagElement, moreButton = None) -> None:
-        super.__init__(element)
+        super().__init__(element)
         self.like_button = like_button
         self.comment_box = comment_box
         self.acc_link_tag = acc_link_tag
@@ -153,7 +160,7 @@ class PostElement(BasePageElement):
         """
         Likes the likeButton attribute
         """
-        self.like_button.click(driver)
+        return self.like_button.click(driver)
 
     def get_post_text(self) -> str:
         """

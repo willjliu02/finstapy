@@ -1,5 +1,4 @@
 from lib2to3.pgen2.token import COMMENT
-from pickle import NONE
 from selenium.webdriver.common.by import By
 
 class LoginPageLocators:
