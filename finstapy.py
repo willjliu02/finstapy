@@ -7,8 +7,11 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException
 
-from page import *
-from locators import *
+from login_page import LoginPage
+from save_info_page import SaveInfoPage
+from home_page import HomePage
+from explore_page import ExplorePage
+from account_page import AccountPage
 
 import random
 
@@ -34,22 +37,6 @@ class FinstaPy:
         saveInfoPage.click_button()
 
         time.sleep(3)
-
-    def dismiss_notification(self):
-        try:
-            alert = self.driver.switch_to.alert()
-            self.browser.close(alert)
-        except NoSuchElementException:
-            CONTINUE
-        # try:
-        #     locator = locators.PopUpLocators.SAVE_INFO_BUTTON
-        #     button = WebDriverWait(self.driver, 15).until(
-        #             lambda driver: driver.find_element(locator[0], locator[1]))
-        #     saveInfoButton = SaveInfoButtonElement(button)
-        #     saveInfoButton.click(self.driver)
-        # except TimeoutException:
-        #     print("Did not see the pop-up")
-        #     self.driver.quit()
 
     def go_to_home_page(self):
         """
